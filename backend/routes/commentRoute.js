@@ -5,7 +5,7 @@ const {protect} = require('../middlewares/authMiddlewares');
 
 router.post('/:postId' , protect , addComment);
 router.get('/:postId'  , getCommentsByPost);
-router.post('/'  , getAllComments);
+router.get('/'  , getAllComments);
 router.delete('/:commentId' , protect , deleteComment);
 
 

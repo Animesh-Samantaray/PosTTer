@@ -38,7 +38,34 @@ const addComment=async(req ,res)=>{
 // public aaccess
 const getCommentsByPost=async(req ,res)=>{
     try {
-        
+        const {postId} = req.params;
+        const comments = await Comment.find({
+            post:postId
+        }).populate('author' , 'name  profileImageUrl').populate('post' , 'title coverImageUrl').sort({createdAt:1});
+
+        const commentMap={};
+
+        comments.forEach(comment=>{
+            comment=comment.toObject();
+            comment.replies=[];
+            commentMap[comment._id]=comment; 
+        })
+
+        const nestedComments=[];
+        comments.forEach(comment=>{
+            const mapped =commentMap[comment._id];
+            if(comment.parentComment){
+                const parent = commentMap[comment.parentComment];
+                if(parent){
+                    parent.replies.push(mapped);
+                }else{
+                    nestedComments.push(mapped);
+                }
+            }else{
+                    nestedComments.push(mapped);
+            }
+        })
+        res.json(nestedComments)
     } catch (error) {
          res.status(500).json({
             message:error.message,
@@ -53,7 +80,16 @@ const getCommentsByPost=async(req ,res)=>{
 // private aaccess
 const deleteComment=async(req ,res)=>{
     try {
-        
+        const {commentId} = req.params;
+        const comment=await Comment.findById(commentId);
+        if(!comment){
+            return res.status(404).json({message:'Comment not found'});
+        }
+        await Comment.findByIdAndDelete(commentId);
+        await Comment.deleteMany({
+            parentComment:commentId
+        })
+        res.json({message:'Comment Deleted'})
     } catch (error) {
          res.status(500).json({
             message:error.message,
@@ -68,7 +104,36 @@ const deleteComment=async(req ,res)=>{
 // public aaccess
 const getAllComments=async(req ,res)=>{
     try {
-        
+        const comments = await Comment.find()
+        .populate('author' , 'name profileImageUrl')
+        .populate('post' , 'title coverImageUrl')
+        .sort({createdAt:1});
+
+        const commentMap={};
+
+        comments.forEach(comment=>{
+            comment=comment.toObject();
+            comment.replies=[];
+            commentMap[comment._id]=comment;
+        })
+
+
+        const nestedComments=[];
+        comments.forEach(comment=>{
+            const mapped =commentMap[comment._id];
+            if(comment.parentComment){
+                const parent = commentMap[comment.parentComment];
+                if(parent){
+                    parent.replies.push(mapped);
+                }else{
+                    nestedComments.push(mapped);
+                }
+            }else{
+                    nestedComments.push(mapped);
+            }
+        })
+
+        res.json(nestedComments);
     } catch (error) {
          res.status(500).json({
             message:error.message,
