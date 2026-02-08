@@ -32,7 +32,8 @@ app.use(express.json());
 app.use('/api/auth',authRoute);
 app.use('/api/posts',blogPostRoute);
 app.use('/api/comments',commentRoute);
-// app.use('/api/dashboard-summary',dashboardRoute)
+app.use('/api/ai',aiRoute);
+app.use('/api/dashboard-summary',dashboardRoute)
 
 app.use('/uploads',express.static(path.join(
     __dirname,"uploads"
