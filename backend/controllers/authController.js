@@ -77,6 +77,7 @@ const loginUser=async( req , res)=>{
             name:user.name,
             email:user.email,
             profileImageUrl:user.profileImageUrl,
+            role:user.role,
             bio:user.bio,
             token:generateToken(user._id),
             message:`Welcome back ${user.name}`

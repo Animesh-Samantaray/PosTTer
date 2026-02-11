@@ -9,3 +9,9 @@ for(let i=0;i<Math.min(words.length,2);i++){
 }
 return initials.toUpperCase();
 }
+
+
+export const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+  return regex.test(email);
+};

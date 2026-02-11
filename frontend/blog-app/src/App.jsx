@@ -10,8 +10,10 @@ import PrivateRoutes from './routes/PrivateRoutes';
 import Dashboard from './Pages/Admin/Dashboard';
 import BlogPosts from './Pages/Admin/BlogPosts';
 import BlogPostEditor from './Pages/Admin/BlogPostEditor';
+import UserProvider from './context/userContext';
 const App = () => {
   return (
+    <UserProvider>
     <div>
       <Router>
         <Routes>
@@ -31,7 +33,7 @@ const App = () => {
               <Route path='/admin/comments' element={<Comment />}/>
            </Route>
 
-           <Route path='/admin-login' element={<AdminLogin />}/>
+          
         </Routes>
       </Router>
       <Toaster 
@@ -47,6 +49,7 @@ const App = () => {
       
       />
     </div>
+    </UserProvider>
   )
 }
 

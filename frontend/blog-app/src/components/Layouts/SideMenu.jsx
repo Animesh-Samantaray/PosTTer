@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { BLOG_NAVBAR_DATA,SIDE_MENU_DATA } from '../../utils/data'
 import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import CharAvatar from '../Cards/CharAvatar'
+import { UserContext } from '../../context/userContext'
 const SideMenu = ({activeMenu , isBlogMenu}) => {
     const navigate=useNavigate();
 
@@ -13,12 +14,12 @@ const SideMenu = ({activeMenu , isBlogMenu}) => {
         }
         navigate(route)
     };
+    const {user} = useContext(UserContext);
 
     const handleLogout=()=>{
         localStorage.clear();
         navigate('/');
-    };
-const user=false;
+    }; 
 
   return (
     <div className='w-64 h-[calc(100vh-61px)] bg-white border-r border-gray-200/50 p-5 sticky top-[61px]'>
