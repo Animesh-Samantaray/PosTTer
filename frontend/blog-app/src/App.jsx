@@ -16,7 +16,9 @@ const App = () => {
     <UserProvider>
     <div>
       <Router>
+        <Toaster position="top-right" />
         <Routes>
+          
            <Route path='/' element={<BlogLandingPage/>}/>
            <Route path='/:slug' element={<BlogPostView/>}/>
            <Route path='/tag/:tagName' element={<PostByTags/>}/>

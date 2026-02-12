@@ -105,7 +105,7 @@ const BlogNavbar = ({ activeMenu }) => {
 
         {openSideMenu && (
           <div className="fixed  top-[61px]  -ml-4 bg-white ">
-            <SideMenu activeMenu={activeMenu} isBlogMenu />
+            <SideMenu activeMenu={activeMenu} isBlogMenu setOpenSideMenu={setOpenSideMenu} />
           </div>
         )}
       </div>

@@ -25,6 +25,9 @@ const registerUser=async( req , res)=>{
 
         if(adminAccessToken && adminAccessToken==process.env.ADMIN_ACCESS_TOKEN){
             role="admin"
+            console.log("ADMIN ENV:", process.env.ADMIN_ACCESS_TOKEN);
+            console.log("TOKEN FROM BODY:", adminAccessToken);
+
         }
 
         const user = await User.create({
@@ -51,45 +54,65 @@ const registerUser=async( req , res)=>{
 }
 }
 
-const loginUser=async( req , res)=>{
+const loginUser = async (req, res) => {
     try {
-        const {email,password} = req.body;
-        if(email.trim().length==0 || password.trim().length==0){
+        let { email, password } = req.body;
+
+        // ✅ Safe validation
+        if (!email || !password) {
             return res.status(400).json({
-                message:"email and password are required"
-            })
-        }
-        const user = await User.findOne({email});
-        if(!user){
-            return res.status(401).json({
-                message:"User doesn't exist , Register plz..."
-            })
+                message: "Email and password are required"
+            });
         }
 
-        const isMatch=bcrypt.compare(password,user.password);
-        if(!isMatch){
+        email = email.trim().toLowerCase();
+        password = password.trim();
+
+        if (email.length === 0 || password.length === 0) {
             return res.status(400).json({
-                message:"Invalid Credentials"
-            })
+                message: "Email and password cannot be empty"
+            });
         }
-        res.status(200).json({
-            _id:user._id,
-            name:user.name,
-            email:user.email,
-            profileImageUrl:user.profileImageUrl,
-            role:user.role,
-            bio:user.bio,
-            token:generateToken(user._id),
-            message:`Welcome back ${user.name}`
-        })
-    }catch (error) {
-    console.error(error);
-    return res.status(500).json({
-        message: "Server error",
-        error: error.message
-    });
-}
-}
+
+        // ✅ Find user
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(401).json({
+                message: "User doesn't exist. Please register."
+            });
+        }
+
+        // ✅ Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                message: "Invalid credentials"
+            });
+        }
+
+        // ✅ Success
+        return res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            profileImageUrl: user.profileImageUrl,
+            role: user.role,
+            bio: user.bio,
+            token: generateToken(user._id),
+            message: `Welcome back ${user.name}`
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
 
 
 const getUserProfile=async( req , res)=>{

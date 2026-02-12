@@ -4,7 +4,7 @@ import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import CharAvatar from '../Cards/CharAvatar'
 import { UserContext } from '../../context/userContext'
-const SideMenu = ({activeMenu , isBlogMenu}) => {
+const SideMenu = ({activeMenu , isBlogMenu ,setOpenSideMenu }) => {
     const navigate=useNavigate();
 
     const handleClick=(route)=>{
@@ -12,13 +12,19 @@ const SideMenu = ({activeMenu , isBlogMenu}) => {
             handleLogout();
             return;
         }
+        console.log(route)
+        setOpenSideMenu((prevState)=>!prevState)
         navigate(route)
     };
-    const {user} = useContext(UserContext);
+
+    const {user,setUser} = useContext(UserContext);
 
     const handleLogout=()=>{
         localStorage.clear();
+        setOpenSideMenu((prevState)=>!prevState)
+        setUser(null);
         navigate('/');
+
     }; 
 
   return (
@@ -58,6 +64,7 @@ const SideMenu = ({activeMenu , isBlogMenu}) => {
         (isBlogMenu ? BLOG_NAVBAR_DATA : SIDE_MENU_DATA).map((item,index)=>{
            return  <button
             key={`menu_${index}`}
+             onClick={() => handleClick(item.path)} 
             className={`w-full flex items-center gap-4 text-[15px] ${
                 activeMenu==item.label ? 
             'text-white bg-linar-to-r from-sky-500 to-cyan-400':''

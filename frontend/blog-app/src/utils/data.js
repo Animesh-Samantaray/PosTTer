@@ -9,19 +9,19 @@ export const SIDE_MENU_DATA=[
         id:"01",
         label:"Dashboard",
         icon:LuLayoutDashboard,
-        Path:'/admin/dashboard'  
+        path:'/admin/dashboard'  
     },
     {
         id:"02",
         label:"Blog Posts",
         icon:LuGalleryVerticalEnd,
-        Path:'/admin/posts'  
+        path:'/admin/posts'  
     },
     {
         id:"03",
         label:"Comments",
         icon:LuMessageSquareQuote,
-        Path:'/admin/comments'  
+        path:'/admin/comments'  
     },
 ]
 

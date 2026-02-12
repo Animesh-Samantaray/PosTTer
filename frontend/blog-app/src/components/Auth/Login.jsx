@@ -6,58 +6,71 @@ import AUTH_IMAGE from "../../assets/auth_image.jpg";
 import { validateEmail } from "../../utils/helper.js";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPath";
+import toast from "react-hot-toast";   // ✅ add this
 
 const Login = ({ setCurrentPage }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const { updateUser,setOpenAuthForm } = useContext(UserContext);
+  const { updateUser, setOpenAuthForm } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if(!validateEmail(email)){
-      setError('Please enter valid email address');
+
+    if (!validateEmail(email)) {
+      const msg = "Please enter valid email address";
+      setError(msg);
+      toast.error(msg); // ✅
       return;
     }
-    if(!password){
-      setError('Please enter the password');
+
+    if (!password) {
+      const msg = "Please enter the password";
+      setError(msg);
+      toast.error(msg); // ✅
       return;
     }
 
     setError("");
 
     try {
-      const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN , {
-        email,password
-      });
+      const response = await axiosInstance.post(
+        API_PATHS.AUTH.LOGIN,
+        { email, password }
+      );
 
-      const {token,role}=response.data;
-      if(token){
-        localStorage.setItem('token' , token);
+      const { token, role, name } = response.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
         updateUser(response.data);
 
-        if(role==='admin'){
-          setOpenAuthForm(false);
-          navigate('/admin/dashboard');
-        }
+        toast.success(`Welcome back ${name || ""} 🚀`); // ✅
 
-        setOpenAuthForm(false)
+        setOpenAuthForm(false);
+
+        if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
       }
+
     } catch (error) {
-      if(error.response && error.response?.data?.message){
-        setError(error.response.data.message)
-      }else{
-        setError('Something went wrong. Try again')
-      }
+      const msg =
+        error.response?.data?.message ||
+        "Something went wrong. Try again";
+
+      setError(msg);
+      toast.error(msg); // ✅
     }
   };
 
   return (
     <div className="grid md:grid-cols-2 h-full">
 
-      {/* FORM SIDE */}
       <div className="flex items-center justify-center px-6 sm:px-10 py-10">
         <div className="w-full max-w-md">
 
@@ -123,7 +136,6 @@ const Login = ({ setCurrentPage }) => {
         </div>
       </div>
 
-      {/* IMAGE SIDE — only md+ */}
       <div className="hidden md:flex items-center justify-center p-10">
         <img
           src={AUTH_IMAGE}
