@@ -14,6 +14,7 @@ import {
 
 import DashboardSummaryCard from "../../components/Cards/DashboardSummaryCard";
 import TagInsights from "../../components/Cards/TagInsights";
+import TopPostCard from "../../components/Cards/TopPostCard";
 
 const Dashboard = () => {
   const { user } = useContext(UserContext);
@@ -122,6 +123,19 @@ const Dashboard = () => {
     <div className="flex items-center justify-center">
       <h5 className="font-medium">Top Posts</h5>
     </div>
+{
+  dashboardData?.topPosts?.slice(0,3)?.map((post) => (
+    <TopPostCard
+      key={post._id}
+      title={post.title}
+      coverImageUrl={post.coverImageUrl}
+      views={post.views}
+      likes={post.likes}
+      maxViews={maxViews}
+    />
+  ))
+}
+
   </div>
 
   {/* Recent Comments */}
