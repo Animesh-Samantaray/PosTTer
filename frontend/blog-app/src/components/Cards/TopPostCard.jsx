@@ -4,7 +4,7 @@ const TopPostCard = ({ key, title, coverImageUrl, views, likes, maxViews }) => {
     const viewPercentage=((views/maxViews)*100).toFixed(0);
   return <div className=" bg-white py-4 flex flex-col gap-3 border-b border-gray-100">
     <div className="flex items-start gap-2">
-        <img src={coverImageUrl} alt="title" className="w-10 h-10 rounded-md object-cover" />
+        <img src={coverImageUrl || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTO0Y8CPlOvI7NkWWfg52LV-24pfbbf1VhfUA&s"} alt="title" className="w-10 h-10 rounded-md object-cover" />
         <h3 className=" text-sm font-medium text-gray-800 line-clamp-2">{title}</h3>
     </div>
 

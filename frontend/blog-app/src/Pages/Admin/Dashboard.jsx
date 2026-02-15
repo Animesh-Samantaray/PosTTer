@@ -4,7 +4,6 @@ import { UserContext } from "../../context/userContext";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPath";
 import moment from "moment";
-
 import {
   LuChartLine,
   LuCheckCheck,
@@ -15,6 +14,10 @@ import {
 import DashboardSummaryCard from "../../components/Cards/DashboardSummaryCard";
 import TagInsights from "../../components/Cards/TagInsights";
 import TopPostCard from "../../components/Cards/TopPostCard";
+import RecentComentsList from "../../components/Cards/RecentComentsList";
+
+const cardClass =
+  "bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm";
 
 const Dashboard = () => {
   const { user } = useContext(UserContext);
@@ -26,7 +29,7 @@ const Dashboard = () => {
   const getDashboardData = async () => {
     try {
       const { data } = await axiosInstance.get(
-        API_PATHS.DASHBOARD.GET_DASHBOARD_DATA,
+        API_PATHS.DASHBOARD.GET_DASHBOARD_DATA
       );
 
       if (!data) return;
@@ -34,9 +37,7 @@ const Dashboard = () => {
       setDashboardData(data);
 
       const topPosts = data?.topPosts || [];
-
       const totalViews = Math.max(...topPosts.map((p) => p.views || 0), 1);
-
       setMaxViews(totalViews);
     } catch (error) {
       console.error("Dashboard fetch failed:", error);
@@ -53,31 +54,41 @@ const Dashboard = () => {
     <DashboardLayout activeMenu="Dashboard">
       {/* Loading */}
       {loading && (
-        <div className="mt-6 text-sm text-gray-500">Loading dashboard…</div>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+    
+    {/* Spinner */}
+    <div className="w-12 h-12 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
+
+    {/* Text */}
+    <div className="text-sm font-medium text-gray-600 tracking-wide animate-pulse">
+      Loading dashboard...
+    </div>
+
+  </div>
       )}
 
       {/* Content */}
       {!loading && dashboardData && (
-        <>
-          <div className="bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50 mt-5">
-            {/* Header */}
+        <div className="space-y-6 md:space-y-8 mt-[20px]">
+          {/* Header + Summary */}
+          <div className={cardClass}>
             <div>
-              <h2 className="text-xl md:text-2xl font-medium">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
                 Good day! {user?.name || "Admin"}
               </h2>
 
-              <p className="text-xs md:text-[13px] font-medium text-gray-400 mt-1.5">
+              <p className="text-xs md:text-sm text-gray-500 mt-1">
                 {moment().format("dddd, MMM YYYY")}
               </p>
             </div>
 
             {/* Summary Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
               <DashboardSummaryCard
                 icon={<LuGalleryVerticalEnd />}
                 label="Total Posts"
                 value={dashboardData?.stats?.totalPosts || 0}
-                bgColor="bg-sky-100/60"
+                bgColor="bg-sky-100"
                 color="text-sky-600"
               />
 
@@ -85,7 +96,7 @@ const Dashboard = () => {
                 icon={<LuCheckCheck />}
                 label="Published"
                 value={dashboardData?.stats?.published || 0}
-                bgColor="bg-emerald-100/60"
+                bgColor="bg-emerald-100"
                 color="text-emerald-600"
               />
 
@@ -93,7 +104,7 @@ const Dashboard = () => {
                 icon={<LuChartLine />}
                 label="Views"
                 value={dashboardData?.stats?.totalViews || 0}
-                bgColor="bg-indigo-100/60"
+                bgColor="bg-indigo-100"
                 color="text-indigo-600"
               />
 
@@ -101,53 +112,57 @@ const Dashboard = () => {
                 icon={<LuHeart />}
                 label="Likes"
                 value={dashboardData?.stats?.totalLikes || 0}
-                bgColor="bg-rose-100/60"
+                bgColor="bg-rose-100"
                 color="text-rose-600"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 my-4 md:my-8">
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            {/* Top Insights */}
+            <div className={`xl:col-span-7 ${cardClass}`}>
+              <h5 className="font-semibold text-gray-800 mb-4 text-center xl:text-left">
+                Top Insights
+              </h5>
 
-  {/* Top Insights */}
-  <div className="col-span-12 md:col-span-7 bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50">
-    <div className="flex items-center justify-center">
-      <h5 className="font-medium">Top Insights</h5>
-    </div>
+              <TagInsights tagUsage={dashboardData?.tagUsage || []} />
+            </div>
 
-    <TagInsights tagUsage={dashboardData?.tagUsage || []}/>
-  </div>
+            {/* Top Posts */}
+            <div className={`xl:col-span-5 ${cardClass}`}>
+              <h5 className="font-semibold text-gray-800 mb-4 text-center xl:text-left">
+                Top Posts
+              </h5>
 
-  {/* Top Posts */}
-  <div className="col-span-12 md:col-span-5 bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50">
-    <div className="flex items-center justify-center">
-      <h5 className="font-medium">Top Posts</h5>
-    </div>
-{
-  dashboardData?.topPosts?.slice(0,3)?.map((post) => (
-    <TopPostCard
-      key={post._id}
-      title={post.title}
-      coverImageUrl={post.coverImageUrl}
-      views={post.views}
-      likes={post.likes}
-      maxViews={maxViews}
-    />
-  ))
-}
+              <div className="space-y-4">
+                {dashboardData?.topPosts?.slice(0, 3)?.map((post) => (
+                <div key={post._id}>
+                   <TopPostCard
+                    title={post.title}
+                     postId={post._id} 
+                    coverImageUrl={post.coverImageUrl}
+                    views={post.views}
+                    likes={post.likes}
+                    maxViews={maxViews}
+                  />
+                </div>
+                ))}
+              </div>
+            </div>
 
-  </div>
+            {/* Recent Comments */}
+            <div className={`xl:col-span-12 ${cardClass}`}>
+              <h5 className="font-semibold text-gray-800 mb-4 text-center xl:text-left">
+                Recent Comments
+              </h5>
 
-  {/* Recent Comments */}
-  <div className="col-span-12 md:col-span-12 bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50">
-    <div className="flex items-center justify-center">
-      <h5 className="font-medium">Recent Comments</h5>
-    </div>
-  </div>
-
-</div>
-
-        </>
+              <RecentComentsList
+                comments={dashboardData?.recentComments || []}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );
