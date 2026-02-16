@@ -113,7 +113,7 @@ const  getAllPosts=async(req ,res)=>{
             BlogPost.countDocuments(filter),
             BlogPost.countDocuments(),
             BlogPost.countDocuments({isDraft:false}),
-            BlogPost.countDocuments({isDraft:false})
+            BlogPost.countDocuments({isDraft:true})
         ]);
 
 

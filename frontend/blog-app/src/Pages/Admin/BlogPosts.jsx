@@ -9,6 +9,7 @@ import Tabs from "../../components/Tabs";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPath";
 import BlogPostSummaryCard from "../../components/Cards/BlogPostSummaryCard";
+import DeleteAlertContent from "../../components/DeleteAlertContent";
 const BlogPosts = () => {
   const navigate = useNavigate();
 
@@ -60,10 +61,26 @@ console.log(posts)
   };
 
   const deletePost = async (postId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.POSTS.DELETE(postId))
+      toast.success('Post Deleted')
 
+      setOpenDeleteAlert({
+        open:false,data:null
+      });
+      getAllPosts();
+    } catch (error) {
+      console.error('Error on deleting :',error.message)
+      toast.error(error.message)
+    }
   };
 
-  const handleLoadMore = () => {};
+  const handleLoadMore = () => {
+
+    if(page<totalPages){
+      getAllPosts(page+1);
+    }
+  };
 
   useEffect(() => {
     getAllPosts();
@@ -77,14 +94,29 @@ console.log(posts)
         
         <div className="w-auto sm:max-w-[900px] mx-auto">
           
-          <div className="flex items-center justify-between">
-            
-            <h2 className=" text-2xl font-semibold mt-5 mb-5">Posts</h2>
-            <button className="flex" onClick={() => navigate("/admin/create")}>
-              
-              <LuPlus className=" text-18px" /> Create New
-            </button>
-          </div>
+          <div className="flex items-center justify-between mt-6 mb-6">
+  <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+    Posts
+  </h2>
+
+  <button
+    onClick={() => navigate("/admin/create")}
+    className="
+      flex items-center gap-2
+      bg-indigo-600 hover:bg-indigo-700
+      text-white font-medium
+      px-5 py-2.5
+      rounded-xl
+      shadow-md hover:shadow-lg
+      transition-all duration-200
+      active:scale-95
+    "
+  >
+    <LuPlus className="text-lg" />
+    Create New
+  </button>
+</div>
+
 
           <Tabs tabs={tabs} activeTab={filterStatus} setActiveTab={setFilterStatus}/>
           <div className="mt-5">
@@ -111,8 +143,43 @@ console.log(posts)
                 )
               })
             }
+
+            {page < totalPages && (<div className="flex items-center justify-center mb-8">
+              <button
+              className="flex items-center gap-3 text-sm text-white font-medium bg-black px-7 py-2.5 rounded-full  text-nowrap hover:scale-105 transition-all cursor-pointer"
+              disabled={isLoading}
+              onClick={handleLoadMore}
+              >
+                {
+                  isLoading ? (
+                    <LuLoaderCircle className=" animate-spin text-[15px]" />
+                  ):(
+                    <LuGalleryVerticalEnd className="text-lg"/>
+                  )
+                }{" "}
+                {isLoading ? 'Loading...' :'Load More'}
+
+
+              </button>
+            </div>)}
           </div>
         </div>
+
+<Modal
+  isOpen={Boolean(openDeleteAlert?.open)}
+  onClose={() => setOpenDeleteAlert({ open: false, data: null })}
+  title="Delete Post"
+>
+  <div className="w-full max-w-md sm:w-[30vw]" aria-live="polite">
+    <DeleteAlertContent
+      content="You want to delete this post?"
+      onDelete={() =>
+        openDeleteAlert?.data && deletePost(openDeleteAlert.data)
+      }
+    />
+  </div>
+</Modal>
+
       </DashboardLayout>
     </>
   );

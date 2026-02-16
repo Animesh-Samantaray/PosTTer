@@ -1,23 +1,25 @@
 import React from "react";
 
-const Tabs = ({ tabs, activeTab, setActiveTab }) => {
+const Tabs = ({ tabs = [], activeTab, setActiveTab }) => {
   return (
     <div className="w-full border-b border-gray-200">
-      <div className="flex overflow-x-auto no-scrollbar gap-2">
-        {tabs.map((tab) => {
+      <div className="flex overflow-x-auto no-scrollbar gap-2" role="tablist">
+        {tabs.map((tab, idx) => {
           const isActive = activeTab === tab.label;
 
           return (
             <button
-              key={tab.label}
-              onClick={() => setActiveTab(tab.label)}
+              key={`${tab.label}-${idx}`}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab && setActiveTab(tab.label)}
               className={`
                 relative flex items-center gap-2
                 px-4 py-2
                 text-sm font-medium
                 whitespace-nowrap
-                transition
-                rounded-t-md
+                transition rounded-t-md
                 ${
                   isActive
                     ? "bg-black text-white"
