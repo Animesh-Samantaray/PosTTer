@@ -156,7 +156,14 @@ const fetchPostDetailsBySlug = async () => {
   }
 };
 
-  const deletePost = async () => {};
+  const deletePost = async () => {
+
+    await axiosInstance.delete(API_PATHS.POSTS.DELETE(postData.id));
+
+     toast.success('Blog Post deleted');
+    navigate('/admin/posts')
+
+  };
 
   useEffect(() => {
     if (isEdit) fetchPostDetailsBySlug();
