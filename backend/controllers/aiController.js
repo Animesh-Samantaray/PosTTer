@@ -1,157 +1,216 @@
-const { GoogleGenAI } = require('@google/genai');
+// aiController.js
+require('dotenv').config();
+
+const { Ollama } = require('ollama');
 
 const {
-    blogPostIdeasPrompt, generateReplyPrompt, blogSummaryPrompt
+  blogPostIdeasPrompt,
+  generateReplyPrompt,
+  blogSummaryPrompt,
 } = require('../utils/prompts');
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// ✅ Ollama Cloud client (API key from .env)
+const ai = new Ollama({
+  host: 'https://ollama.com',
+  headers: {
+    Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`,
+  },
+});
 
+// choose cloud model once
+const MODEL = process.env.AI_MODEL || 'gpt-oss:120b';
 
-// generate blog content
-// post  /api/ai/generate
-// access private
+// --------------------------
+// Generate blog post content
+// POST /api/ai/generate
+// --------------------------
 const generateBlogPost = async (req, res) => {
-    try {
-        const { title, tone } = req.body;
+  try {
+    const { title, tone } = req.body;
 
-        if (!title || !tone) {
-            return res.status(400).json({ message: 'title and tone are required' });
-        }
+    if (!title || !tone) {
+      return res.status(400).json({ message: 'title and tone are required' });
+    }
 
-        const prompt = `
-Write a short blog post titled "${title}" in Markdown format using a "${tone}" tone.
+const prompt = `
+You are an expert blog writer.
 
-Use:
-- # for main headings, ## for subheadings
-- Bullet points for lists
-- Code blocks for examples if needed
-- Short paragraphs
+Write a high-quality, engaging blog post.
 
-Include:
-- A quick introduction
-- 1-3 main sections
-- Simple examples if needed
-- A brief conclusion
+TITLE: "${title}"
+TONE: "${tone}"
 
-Keep it clear, simple, and easy to read. Return the full post in Markdown.
+OUTPUT FORMAT:
+- Use Markdown formatting for headings, lists, quotes, and code
+- Write naturally like a real blog article — not notes
+- Do NOT include meta commentary
+- Do NOT mention AI
+- Do NOT wrap the entire output in code fences
+
+CONTENT REQUIREMENTS:
+
+# ${title}
+
+## Introduction
+- Strong hook
+- Explain why this topic matters
+- Preview what reader will gain
+
+## Main Sections
+- 2–4 well-developed sections
+- Each with clear subheadings
+- Short readable paragraphs
+- Add insights, not generic filler
+- Include practical explanations
+
+## Examples / Practical Use
+Include at least one of:
+- real-world scenario
+- mini case example
+- step-by-step breakdown
+- best-practice checklist
+
+## Deep Value Add
+Add one:
+- pro tips
+- common mistakes
+- optimization advice
+- comparison
+- tradeoffs
+
+## Key Takeaways
+- Bullet summary of important points
+
+## Conclusion
+- Crisp wrap-up
+- Forward-looking or action-oriented
+
+STYLE RULES:
+- Clear, concrete, not vague
+- Avoid repetition
+- Avoid buzzword stuffing
+- Vary sentence length
+- Keep it readable and professional
+- Match the requested tone strictly
+
+Return only the final article content.
 `;
 
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
+    const response = await ai.generate({
+      model: MODEL,
+      prompt,
+    });
 
-        const blogText = response.text;
+    res.status(200).json({ content: response.response });
 
-        res.status(200).json({ content: blogText });
-    } catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
-
-
-
-
-
-
-// generate blog post ideas from title
-// post  /api/ai/generate-ideas
-// access private
+// --------------------------
+// Generate blog post ideas
+// POST /api/ai/generate-ideas
+// --------------------------
 const generateBlogPostIdeas = async (req, res) => {
-    try {
-        const { topics } = req.body;
-
-        if (!topics) {
-            return res.status(400).json({ message: 'Topics are required' });
-        }
-        const prompt = blogPostIdeasPrompt(topics);
-
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
-        let rawText = response.text;
-
-
-        const cleanedText = rawText.replace(/^```json\s*/, "").replace(/```$/, "").trim();
-
-        const data=JSON.parse(cleanedText);
-        res.status(200).json(data)
-
-    } catch (error) {
-        return res.status(500).json({
-            message: error.message,
-            message: error.message
-        })
+  try {
+    const { topics } = req.body;
+    if (!topics) {
+      return res.status(400).json({ message: 'Topics are required' });
     }
-}
 
+    const prompt = blogPostIdeasPrompt(topics);
 
-// generate comment reply 
-// post  /api/ai/generate-reply
-// access private
+    const response = await ai.generate({
+      model: MODEL,
+      prompt,
+    });
+
+    let rawText = response.response;
+
+    const cleanedText = rawText
+      .replace(/^```json\s*/, '')
+      .replace(/```$/, '')
+      .trim();
+
+    const data = JSON.parse(cleanedText);
+
+    res.status(200).json(data);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --------------------------
+// Generate comment reply
+// POST /api/ai/generate-reply
+// --------------------------
 const generateCommentReply = async (req, res) => {
-    try {
-        const {author , content} = req.body;
+  try {
+    const { author, content } = req.body;
 
-        if(!content){
-            return res.status(400).json({message:'All fields are required'})
-        };
-
-        const prompt = generateReplyPrompt({author , content});
-
-            const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
-
-        let rawText = response.text;
-        res.status(200).json(rawText)
-
-    } catch (error) {
-        return res.status(500).json({
-            message: error.message,
-            message: 'Internal server error'
-        })
+    if (!content) {
+      return res.status(400).json({ message: 'Content required' });
     }
-}
 
+    const prompt = generateReplyPrompt({ author, content });
 
-// generate blog post summary
-// post  /api/ai/generate-summary
-// access public
+    const response = await ai.generate({
+      model: MODEL,
+      prompt,
+    });
+
+    res.status(200).json({ reply: response.response });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// --------------------------
+// Generate blog summary
+// POST /api/ai/generate-summary
+// --------------------------
 const generatePostSummary = async (req, res) => {
-    try {
-        const  { content} = req.body;
-        if(!content){
-            return res.status(400).json({
-                message:'Contents are required'
-            })
-        }
+  try {
+    const { content } = req.body;
 
-        const prompt = blogSummaryPrompt(content);
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
-        let rawText = response.text;
-
-
-        const cleanedText = rawText.replace(/^```json\s*/, "").replace(/```$/, "").trim();
-
-        const data=JSON.parse(cleanedText);
-        res.status(200).json(data)
-
-    } catch (error) {
-        return res.status(500).json({
-            message: error.message,
-            message: 'Internal server error'
-        })
+    if (!content) {
+      return res.status(400).json({ message: 'Content required' });
     }
-}
 
-module.exports = { generateBlogPost, generateBlogPostIdeas, generateCommentReply, generatePostSummary };
+    const prompt = blogSummaryPrompt(content);
+
+    const response = await ai.generate({
+      model: MODEL,
+      prompt,
+    });
+
+    let rawText = response.response;
+
+    const cleanedText = rawText
+      .replace(/^```json\s*/, '')
+      .replace(/```$/, '')
+      .trim();
+
+    const data = JSON.parse(cleanedText);
+
+    res.status(200).json(data);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = {
+  generateBlogPost,
+  generateBlogPostIdeas,
+  generateCommentReply,
+  generatePostSummary,
+};

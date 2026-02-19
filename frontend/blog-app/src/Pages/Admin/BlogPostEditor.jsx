@@ -1,334 +1,294 @@
-import React, { useEffect, useState } from 'react'
-import DashboardLayout from '../../components/Layouts/DashboardLayout'
+import React, { useState, useEffect } from "react";
+import DashboardLayout from "../../components/Layouts/DashboardLayout";
 import MDEditor, { commands } from "@uiw/react-md-editor";
+import { LuSave, LuSend, LuSparkles, LuTrash2 } from "react-icons/lu";
 
-import {
-  LuLoaderCircle,
-  LuSave,
-  LuSend,
-  LuSparkles,
-  LuTrash2,
-} from "react-icons/lu";
+import CoverImageSelector from "../../components/Inputs/CoverImageSelector";
+import TagInput from "../../components/Inputs/TagInput";
+import Modal from "../../components/Modal";
+import GeneratedBlogPostForm from "./components/GeneratedBlogPostForm";
 
-import axiosInstance from '../../utils/axiosInstance';
-import { API_PATHS } from '../../utils/apiPath';
-import { useNavigate, useParams } from 'react-router-dom';
-import CoverImageSelector from '../../components/Inputs/CoverImageSelector';
-import TagInput from '../../components/Inputs/TagInput';
-import SkeletonLoader from '../../components/Cards/SkeletonLoader';
-const BlogPostEditor = ({isEdit}) => {
-  const navigate=useNavigate();
+import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPath";
+import toast from "react-hot-toast";
 
-  const {postSlug=""}=useParams();
+const BlogPostEditor = ({ isEdit }) => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
 
-  const [postData,setPostData]=useState({
-    id:"",
-    title:"",
-    content:"",
-    coverImageUrl:"",
-    coverPreview:"",
-    tags:"",
-    isDraft:"",
-    generatedByAI:false
-  })
-const [postIdeas, setPostIdeas] = useState([]);
+  const [postData, setPostData] = useState({
+    id: "",
+    title: "",
+    content: "",
+    coverImageUrl: "",
+    coverPreview: "",
+    tags: [],
+    isDraft: false,
+    generatedByAI: false,
+  });
 
-const [error, setError] = useState("");
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [openGenForm, setOpenGenForm] = useState(false);
 
-const [openBlogPostGenForm, setOpenBlogPostGenForm] = useState({
-  open: false,
-  data: null,
-});
+  const handleValueChange = (key, value) => {
+    setPostData((prev) => ({ ...prev, [key]: value }));
+  };
 
-const [ideaLoading, setIdeaLoading] = useState(false);
+  // ===== IMAGE UPLOAD HELPER =====
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
 
-const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
+    const res = await axiosInstance.post(
+      API_PATHS.IMAGE.UPLOAD_IMAGE,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
 
-const handleValueChange=(key , value)=>{
-setPostData((prevData)=>({...prevData,[key]:value}));
-}
+    return res.data;
+  };
 
-const generatePostIdeas=async()=>{
-  setIdeaLoading(true);
-  try {
-    const aiResponse = await axiosInstance.post(API_PATHS.AI.GENERATE_BLOG_POST , {
-      topics:'AI , GEN AI , This Generation , Ai era , python , docker '
-    })
-    const generatedIdeas = aiResponse.data;
-    if(generatePostIdeas?.length>0){
-      setPostIdeas(generatedIdeas)
+  // ===== CREATE / UPDATE POST =====
+  const handlePublish = async (isDraft) => {
+    if (loading) return;
+
+    // ----- validation -----
+    if (!postData.title.trim()) {
+      toast.error("Title is required");
+      return;
     }
+
+    if (!postData.content.trim()) {
+      toast.error("Content is required");
+      return;
+    }
+
+    if (!isDraft) {
+      if (!postData.coverImageUrl && !postData.coverPreview) {
+        toast.error("Cover image required");
+        return;
+      }
+      if (!postData.tags.length) {
+        toast.error("Add at least one tag");
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      let finalCoverUrl = "";
+
+      // ----- image resolution -----
+      if (postData.coverImageUrl instanceof File) {
+        const imgRes = await uploadImage(postData.coverImageUrl);
+        finalCoverUrl = imgRes.imageUrl || "";
+      } else {
+        finalCoverUrl =
+          postData.coverImageUrl || postData.coverPreview || "";
+      }
+
+      const payload = {
+        title: postData.title,
+        content: postData.content,
+        coverImageUrl: finalCoverUrl,
+        tags: postData.tags,
+        isDraft: !!isDraft,
+        generatedByAI: postData.generatedByAI,
+      };
+
+      // ----- create vs update -----
+      const response = isEdit
+        ? await axiosInstance.put(
+            API_PATHS.POSTS.UPDATE(postData.id),
+            payload
+          )
+        : await axiosInstance.post(
+            API_PATHS.POSTS.CREATE,
+            payload
+          );
+
+      if (response?.data) {
+        toast.success(
+          isEdit ? "Post updated successfully" : "Post created successfully"
+        );
+        navigate("/admin/posts");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to save post"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===== KEEP BLANK (as requested) =====
+const fetchPostDetailsBySlug = async () => {
+  try {
+    if (!slug) return;
+
+    const response = await axiosInstance.get(
+      API_PATHS.POSTS.GET_BY_SLUG(slug)
+    );
+
+    if (response?.data) {
+      const data = response?.data;
+
+      setPostData((prev) => ({
+        ...prev,
+        id: data._id,
+        title: data.title,
+        content: data.content,
+        coverPreview: data.coverImageUrl,
+        coverImageUrl: data.coverImageUrl,
+        tags: data.tags || [],
+        isDraft: data.isDraft,
+        generatedByAI: data.generatedByAI || false,
+      }));
+    }
+
   } catch (error) {
-    console.log('Something went wrong')
-    toast.error('SOmething went wrong')
-  }finally{
-    setIdeaLoading(false);
+    console.error(error);
+    toast.error(error?.response?.data?.message || "Failed to load post");
   }
-}
-const handlePublish=async()=>{
+};
 
-}
-const fetchPostDetailsBySlug=async()=>{
+  const deletePost = async () => {};
 
-}
-const deletePost=async()=>{
-
-}
-
-
-useEffect(()=>{
-if(isEdit){
-  fetchPostDetailsBySlug()
-}else{
-  generatePostIdeas();
-}
-
-return ()=>{}
-},[])
+  useEffect(() => {
+    if (isEdit) fetchPostDetailsBySlug();
+  }, [isEdit]);
 
   return (
-    <DashboardLayout activeMenu='Blog Posts'>
-      <div className='my-5'>
-        <div className='grid grid-cols-1 mdgrid-cols-12 gap-5 my-4'>
-          <div className='form-card p-6 col-span-12 md:col-span-8'>
-            <div className='flex items-center justify-between'>
-              <h2 className='text-base md:text-lg font-medium'>
-                  {!isEdit ? "Add New Psot":"  Edit Post"}
+    <DashboardLayout activeMenu="Blog Posts">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+        <div className="bg-white rounded-2xl border shadow-sm p-4 sm:p-6 space-y-5">
 
-              </h2>
-
-              <div className='flex items-center gap-3'>
-                {isEdit && (
-                  <button className='flex items-center gap-2.5 text-[13px] font-medium text-rose-500 bg-rose-50/60 rounded px=1.5 md:px-3 py-1 md:py-[3px] border border-rose-50 hover:border-rose-300 cursor-pointer hover:scale-[1.02] transition-all' disabled={loading} onClick={()=>setOpenDeleteAlert(true)}>
-                    <LuTrash2 className='text-sm'/> {" "}
-                    <span className='hidden md:block'>Delete</span>
-
-                  </button>
-                )}
-
-
-                 <button className='flex items-center gap-2.5 text-[13px] font-medium text-sky-500 bg-sky-50/60 px-1.5 md:px-3 py-1 md:py-[3px] border border-sky-100 hover:border-sky-400 cursor-pointer hover:scale-[1.02]' disabled={loading} onClick={()=>handlePublish(true)}>
-                 <LuSave className='text-sm'/>{" "}
-                 <span className='hidden md:block'> Save as Draft </span>
-                </button>
-
-                <button className='flex items-center gap-2.5 text-[13px] font-medium text-sky-500 bg-sky-50/60 px-1.5 md:px-3 py-1 md:py-[3px] border border-sky-100 hover:border-sky-400 cursor-pointer hover:scale-[1.02]' disabled={loading} onClick={()=>handlePublish(true)}>
-                  {loading?(
-                    <LuLoaderCircle className=''/>
-                  ):(
-                    <LuSend className='' />
-                  )} {" "}
-                  Publish
-                </button>
-              </div>
-            </div>
-            {error && <p className=''>{error}</p>}
-            <div className='mt-4'>
-              <label className="text-xs font-medium text-slate-600"> Post Title</label>
-              <input placeholder='How to be Iron-Man '
-              className='form-input'
-              value={postData.title}
-              onChange={({target})=>handleValueChange('title',target.value)}
-              />
-            </div>
-
-            <div className='mt-4'>
-                  <CoverImageSelector
-                  image={postData.coverImageUrl}
-                  setImage={(value)=>handleValueChange("coverImageUrl",value)}
-
-                  preview={postData.coverPreview}
-
-                  setPriview={(value)=>handleValueChange('coverPreview',value)} />
-            </div>
-
-<div className="mt-6">
-  {/* HEADER ROW */}
-  <div className="flex items-center justify-between mb-2">
-    <label className="text-sm font-semibold text-slate-700">
-      Content
-    </label>
-
-    <span className="text-xs text-slate-400">
-      Markdown supported
-    </span>
-  </div>
-
-  {/* EDITOR CARD */}
-  <div
-    data-color-mode="light"
-    className="
-      rounded-2xl
-      border border-slate-200
-      bg-white
-      shadow-sm
-      overflow-hidden
-      transition
-      hover:shadow-md
-      focus-within:ring-2 focus-within:ring-indigo-500/60
-    "
-  >
-    <MDEditor
-      value={postData.content}
-      onChange={(val) => handleValueChange("content", val || "")}
-      height={440}
-      preview="edit"
-      visibleDragbar={false}
-      textareaProps={{
-        placeholder:
-          "Write your blog content here… headings, code, lists — ship something awesome.",
-      }}
-      commands={[
-        commands.bold,
-        commands.italic,
-        commands.strikethrough,
-        commands.hr,
-
-        commands.group(
-          [commands.title1, commands.title2, commands.title3],
-          {
-            name: "title",
-            groupName: "title",
-            buttonProps: { "aria-label": "Insert heading" },
-          }
-        ),
-
-        commands.divider,
-        commands.link,
-        commands.quote,
-        commands.code,
-        commands.codeBlock,
-        commands.image,
-
-        commands.unorderedListCommand,
-        commands.orderedListCommand,
-        commands.checkedListCommand,
-
-        commands.divider,
-        commands.preview,
-        commands.fullscreen,
-      ]}
-    />
-  </div>
-
-  {/* FOOTNOTE */}
-  <p className="text-xs text-slate-500 mt-3">
-    Tip: Use headings + lists for better readability and SEO.
-  </p>
-</div>
-
-
-
-
+          {/* HEADER */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-
-              <label className='text-xs font-medium text-slate-500'>Tags</label>
-
-              <TagInput
-                tags={postData?.tags || []}
-                setTags = {(data)=>{
-                  handleValueChange('tags',data);
-                }}
-              />
+              <h2 className="text-xl font-semibold">
+                {isEdit ? "Edit Post" : "Create New Post"}
+              </h2>
+              <p className="text-sm text-slate-500">
+                Write and publish content
+              </p>
             </div>
 
-            
+            <div className="flex flex-wrap gap-2 sm:gap-3">
 
+              {!isEdit && (
+                <button
+                  onClick={() => setOpenGenForm(true)}
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+                >
+                  <LuSparkles />
+                  AI Generate
+                </button>
+              )}
+
+              {isEdit && (
+                <button
+                  onClick={deletePost}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium px-4 py-2 rounded-lg border"
+                >
+                  <LuTrash2 />
+                  Delete
+                </button>
+              )}
+
+              <button
+                onClick={() => handlePublish(true)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 bg-sky-50 hover:bg-sky-100 text-sky-700 text-sm font-medium px-4 py-2 rounded-lg border"
+              >
+                <LuSave />
+                Draft
+              </button>
+
+              <button
+                onClick={() => handlePublish(false)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              >
+                <LuSend />
+                Publish
+              </button>
+            </div>
           </div>
 
-{!isEdit && (
-  <div className="form-card col-span-12 md:col-span-9 xl:col-span-10 p-0 overflow-hidden w-full group">
-
-    {/* HEADER */}
-    <div
-      className="
-        flex items-center justify-between
-        px-7 pt-7 pb-5
-        border-b border-slate-100
-        bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50
-      "
-    >
-      {/* LEFT */}
-      <div className="flex items-center gap-4">
-        <div
-          className="
-            w-11 h-11
-            flex items-center justify-center
-            rounded-2xl
-            bg-white
-            shadow-sm
-            group-hover:shadow-md
-            transition
-          "
-        >
-          <LuSparkles className="text-indigo-600 text-xl" />
-        </div>
-
-        <div>
-          <h4 className="text-base font-semibold text-indigo-700">
-            Ideas for your post
-          </h4>
-          <p className="text-xs text-indigo-500 mt-0.5">
-            AI-powered topic brainstorming
-          </p>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <button
-        onClick={() =>
-          setOpenBlogPostGenForm({ open: true, data: null })
-        }
-        className="
-          text-sm font-semibold
-          px-5 py-2.5
-          rounded-xl
-          bg-indigo-600
-          text-white
-          shadow-sm
-          hover:bg-indigo-700
-          hover:shadow-lg
-          hover:-translate-y-0.5
-          active:translate-y-0
-          transition-all duration-200
-        "
-      >
-        Generate New
-      </button>
-    </div>
-
-   <div>
-    {
-      ideaLoading ? (
-        <div>
-          <SkeletonLoader />
-        </div>
-      ):(
-        postIdeas.map((idea,index)=>(
-          <BlogPostIdeaCard 
-          key={`idea_${index}`}
-          title={idea.title || ""}
-          description = {idea.description||""}
-          tags={idea.tags || ""}
-          tone={idea.tone || ""}
-          onSelect={()=>setOpenBlogPostGenForm({open:true,data:idea})}
+          {/* TITLE */}
+          <input
+            className="w-full rounded-lg border px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Post title..."
+            value={postData.title}
+            onChange={(e) => handleValueChange("title", e.target.value)}
           />
-        ))
-      )
-    }
-   </div>
-  </div>
-)}
 
+          {/* COVER */}
+          <CoverImageSelector
+            image={postData.coverImageUrl}
+            setImage={(v) => handleValueChange("coverImageUrl", v)}
+            preview={postData.coverPreview}
+            setPriview={(v) => handleValueChange("coverPreview", v)}
+          />
 
+          {/* EDITOR */}
+          <div data-color-mode="light" className="border rounded-xl overflow-hidden">
+            <MDEditor
+              value={postData.content}
+              onChange={(v) => handleValueChange("content", v || "")}
+              height={480}
+              preview="edit"
+              visibleDragbar={false}
+              commands={[
+                commands.bold,
+                commands.italic,
+                commands.hr,
+                commands.group(
+                  [commands.title1, commands.title2, commands.title3],
+                  { name: "title", groupName: "title" }
+                ),
+                commands.divider,
+                commands.link,
+                commands.quote,
+                commands.codeBlock,
+                commands.unorderedListCommand,
+                commands.orderedListCommand,
+                commands.preview,
+                commands.fullscreen,
+              ]}
+            />
+          </div>
 
-
-
+          {/* TAGS */}
+          <TagInput
+            tags={postData.tags}
+            setTags={(t) => handleValueChange("tags", t)}
+          />
         </div>
       </div>
-    </DashboardLayout>
-  )
-}
 
-export default BlogPostEditor 
+      {/* AI MODAL */}
+      <Modal isOpen={openGenForm} onClose={() => setOpenGenForm(false)} hideHeader>
+        <GeneratedBlogPostForm
+          setPostContent={(title, content) => {
+            setPostData((prev) => ({
+              ...prev,
+              title: title || prev.title,
+              content,
+              generatedByAI: true,
+            }));
+          }}
+          handleCloseForm={() => setOpenGenForm(false)}
+        />
+      </Modal>
+    </DashboardLayout>
+  );
+};
+
+export default BlogPostEditor;
