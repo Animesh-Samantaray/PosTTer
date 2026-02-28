@@ -1,0 +1,10 @@
+I am the backen developer and workin on a project where i need gooogle authentication and storing them in the databse
+
+i need when user will come , we have to do google auth for him and after this alll willl be saved to our database 
+
+
+
+afterwards , i want googe fit connection  means  , i want that the google fit dta on the google account , i hae apis also i dont know how to do this , in 1 bacckend i have to do
+
+1 section is for  this 
+one section wil be of dustbins , means add and find dustbins  on he map fo i have very good backend for that  part all are ok but the  thing i need is to fetch data from google fit of that user and to store those datas in users database 

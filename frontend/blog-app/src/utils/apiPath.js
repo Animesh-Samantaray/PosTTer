@@ -32,4 +32,10 @@ export const API_PATHS = {
     GET_BY_TAG: (tag) => `/api/posts/tag/${tag}`,      // Get posts by a specific tag
     SEARCH: "/api/posts/search",                       // Search posts by title or content
   },
+  COMMENT: {
+    ADD: (postId) => `/api/comments/${postId}`,             // Add a new comment or reply to a post
+    GET_BY_POST: (postId) => `/api/comments/${postId}`,      // Get all threaded comments for a specific post
+    DELETE: (commentId) => `/api/comments/${commentId}`,     // Delete a comment and all its nested replies
+    GET_ALL: "/api/comments",                               // Get all comments across the entire platform
+  },
 };

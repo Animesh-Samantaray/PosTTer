@@ -11,6 +11,7 @@ import Dashboard from './Pages/Admin/Dashboard';
 import BlogPosts from './Pages/Admin/BlogPosts';
 import BlogPostEditor from './Pages/Admin/BlogPostEditor';
 import UserProvider from './context/userContext';
+import Comments from './Pages/Admin/Comments';
 const App = () => {
   return (
     <UserProvider>
@@ -29,10 +30,10 @@ const App = () => {
               <Route path='/admin/posts' element={<BlogPosts/>}/>
               <Route path='/admin/create' element={<BlogPostEditor/>}/>
               <Route 
-              path='/admin/edit/:postSlug'
+              path='/admin/edit/:slug'
               element={<BlogPostEditor   isEdit={true}/>}
               />
-              <Route path='/admin/comments' element={<Comment />}/>
+              <Route path='/admin/comments' element={<Comments />}/>
            </Route>
 
           

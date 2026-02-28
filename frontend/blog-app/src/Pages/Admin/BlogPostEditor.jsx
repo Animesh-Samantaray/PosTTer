@@ -17,16 +17,16 @@ const BlogPostEditor = ({ isEdit }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const [postData, setPostData] = useState({
-    id: "",
-    title: "",
-    content: "",
-    coverImageUrl: "",
-    coverPreview: "",
-    tags: [],
-    isDraft: false,
-    generatedByAI: false,
-  });
+const [postData, setPostData] = useState({
+  id: "",
+  title: "",
+  content: "",
+  coverImageUrl: null,
+  coverPreview: null,
+  tags: [],
+  isDraft: false,
+  generatedByAI: false,
+});
 
   const [loading, setLoading] = useState(false);
   const [openGenForm, setOpenGenForm] = useState(false);
@@ -165,9 +165,11 @@ const fetchPostDetailsBySlug = async () => {
 
   };
 
-  useEffect(() => {
-    if (isEdit) fetchPostDetailsBySlug();
-  }, [isEdit]);
+useEffect(() => {
+  if (isEdit && slug) {
+    fetchPostDetailsBySlug();
+  }
+}, [isEdit, slug]); // Adding slug ensures it re-fetches if the URL changes
 
   return (
     <DashboardLayout activeMenu="Blog Posts">
