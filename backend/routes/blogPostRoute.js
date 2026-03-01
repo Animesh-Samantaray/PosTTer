@@ -23,7 +23,7 @@ router.delete('/:id' , protect , adminOnly , deletePost);
 router.get('/tag/:tag',getPostsByTag);
 router.get('/search',searchPosts);
 router.post('/:id/view',incrementPostView);
-router.post('/:id/like',protect,likePost);
+router.post('/:id/like', protect, likePost);
 router.get('/trending' , getTopPosts);
 
 

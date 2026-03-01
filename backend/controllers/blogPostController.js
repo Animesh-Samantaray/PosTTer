@@ -125,16 +125,32 @@ const incrementPostView = async (req, res) => {
     }
 };
 
-// Like a post (Fix: Increments likes, not views)
+// Like a post
 const likePost = async (req, res) => {
     try {
-        const post = await BlogPost.findByIdAndUpdate(
-            req.params.id,
-            { $inc: { likes: 1 } }, // Changed from views to likes
-            { new: true }
-        );
+        const post = await BlogPost.findById(req.params.id);
         if (!post) return res.status(404).json({ message: "Post not found" });
-        res.status(200).json({ message: 'Post liked', likes: post.likes });
+        
+        const userId = req.user._id;
+        const isCurrentlyLiked = post.likedBy && post.likedBy.includes(userId);
+        
+        if (isCurrentlyLiked) {
+            // Remove user from likedBy array and decrement likes count
+            post.likedBy.pull(userId);
+            post.likes = Math.max(0, post.likes - 1);
+        } else {
+            // Add user to likedBy array and increment likes count
+            post.likedBy.push(userId);
+            post.likes += 1;
+        }
+        
+        await post.save();
+        
+        res.status(200).json({ 
+            message: isCurrentlyLiked ? 'Like removed' : 'Post liked', 
+            likes: post.likes,
+            isLiked: !isCurrentlyLiked 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

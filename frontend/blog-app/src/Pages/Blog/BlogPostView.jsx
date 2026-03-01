@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import CommentInfoCard from "../../components/Cards/CommentInfoCard";
 import CommentReplyInput from "../../components/Inputs/CommentReplyInput";
 import DefaultUserIcon from "../../assets/user.png";
-import { LuMessageSquare, LuArrowLeft, LuSparkles } from "react-icons/lu";
+import { LuMessageSquare, LuArrowLeft, LuSparkles, LuHeart } from "react-icons/lu";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import ReactMarkdown from "react-markdown";
@@ -24,6 +24,8 @@ const BlogPostView = () => {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [summaryContent, setSummaryContent] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   // Fetch blog post and comments
   useEffect(() => {
@@ -35,6 +37,14 @@ const BlogPostView = () => {
         const postResponse = await axiosInstance.get(API_PATHS.POSTS.GET_BY_SLUG(slug));
         const postData = postResponse.data;
         setPost(postData);
+        
+        // Set like state and count
+        setIsLiked(postData.isLiked || false);
+        setLikesCount(postData.likes || 0);
+        // Also store the likedBy array for reference
+        if (postData.likedBy && postData.likedBy.includes(user?._id)) {
+          setIsLiked(true);
+        }
 
         // Fetch comments for this post
         const commentsResponse = await axiosInstance.get(API_PATHS.COMMENT.GET_ALL_BY_POST(postData._id));
@@ -132,6 +142,27 @@ const BlogPostView = () => {
     }
   };
 
+  // Handle like functionality
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("Please login to like posts");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(API_PATHS.POSTS.LIKE(post._id));
+      
+      // Update local state based on backend response
+      setIsLiked(response.data.isLiked);
+      setLikesCount(response.data.likes);
+      
+      toast.success(response.data.message);
+    } catch (error) {
+      console.error("Like error:", error);
+      toast.error("Failed to like post");
+    }
+  };
+
   // Refresh data after reply operations
   const refreshComments = async () => {
     try {
@@ -194,6 +225,36 @@ const BlogPostView = () => {
                 <p className="font-medium text-slate-900">{post.author?.name || "Anonymous"}</p>
                 <p>{moment(post.createdAt).format("MMMM D, YYYY")}</p>
               </div>
+            </div>
+            
+            {/* Like Button and View Count */}
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="flex items-center gap-2 text-slate-500">
+                <LuHeart size={16} />
+                <span className="text-sm font-medium">{likesCount}</span>
+                <span className="text-xs text-slate-400">likes</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500">
+                <LuMessageSquare size={16} />
+                <span className="text-sm font-medium">{post.views || 0}</span>
+                <span className="text-xs text-slate-400">views</span>
+              </div>
+              
+              {/* Floating Like Button */}
+              <button
+                onClick={handleLike}
+                disabled={!user}
+                className={`fixed bottom-8 right-8 p-4 rounded-full shadow-lg transition-all duration-300 z-50 ${
+                  isLiked 
+                    ? 'bg-red-500 text-white hover:bg-red-600' 
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <LuHeart 
+                  size={20} 
+                  className={isLiked ? 'fill-current' : ''}
+                />
+              </button>
             </div>
             
             {post.tags && post.tags.length > 0 && (

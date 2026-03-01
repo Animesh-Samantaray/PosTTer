@@ -25,6 +25,14 @@ const BlogPostSchema=new mongoose.Schema({
         type:Number,
         default:0
     },
+    isLiked:{
+        type:Boolean,
+        default:false
+    },
+    likedBy:[{
+        type:[mongoose.Schema.Types.ObjectId],
+        default:[]
+    }],
     generatedByAI:{
         type:Boolean,
         default:false

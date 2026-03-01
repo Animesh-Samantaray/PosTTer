@@ -9,9 +9,6 @@ export const API_PATHS = {
   IMAGE: {
     UPLOAD_IMAGE: "/api/auth/image-upload",
   },
-  DASHBOARD: {
-    GET_DASHBOARD_DATA: "/api/dashboard-summary",
-  },
   AI: {
     GENERATE_BLOG_POST: "/api/ai/generate",
     GENERATE_BLOG_POST_IDEAS: "/api/ai/generate-ideas",
@@ -27,11 +24,12 @@ export const API_PATHS = {
     DELETE: (id) => `/api/posts/${id}`,
     GET_BY_TAG: (tag) => `/api/posts/tag/${tag}`,
     SEARCH: "/api/posts/search",
-    INCREMENT_VIEW: (id) => `/api/posts/${id}/view`, // FIXED: backend uses /:id/view
+    INCREMENT_VIEW: (id) => `/api/posts/${id}/view`, 
+    LIKE: (id) => `/api/posts/${id}/like`, // 🔥 FIXED: Added missing Like path
   },
   COMMENT: {
     ADD: (postId) => `/api/comments/${postId}`,
-    GET_ALL_BY_POST: (postId) => `/api/comments/${postId}`, // CHANGED NAME TO MATCH COMPONENT
+    GET_ALL_BY_POST: (postId) => `/api/comments/${postId}`,
     DELETE: (commentId) => `/api/comments/${commentId}`,
     GET_ALL: "/api/comments",
   },
