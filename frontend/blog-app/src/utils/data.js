@@ -35,9 +35,9 @@ export const BLOG_NAVBAR_DATA=[
     },
     {
         id:"02",
-        label:"React JS",
+        label:"Virat",
         icon:LuTag,
-        path:'/tag/react'  
+        path:'/tag/virat'  
     },
     {
         id:"03",

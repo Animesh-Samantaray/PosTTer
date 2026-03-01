@@ -10,6 +10,7 @@ import ProfileInfoCard from "../../Cards/ProfileInfoCard.jsx";
 import Login from "../../Auth/Login.jsx";
 import SignUp from "../../Auth/SignUp.jsx";
 import Modal from "../../Modal.jsx";
+import SearchBarPopup from "../../../Pages/Blog/components/SearchBarPopup.jsx";
 const AuthModel=()=>{
   const {openAuthForm , setOpenAuthForm} = useContext(UserContext);
   const [currentPage , setCurrentPage]=useState('login');
@@ -112,6 +113,7 @@ const BlogNavbar = ({ activeMenu }) => {
     </div>
 
     <AuthModel />
+    <SearchBarPopup  isOpen={openSearchBar} setIsOpen={setOpenSearchBar}/>
     </>
   );
 };

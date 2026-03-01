@@ -1,7 +1,7 @@
 const express=require('express');
 
 
-const {createPost , updatePost , deletePost , getAllPosts , getPostBySlug , getPostsByTag , searchPosts , incrementReview , likePost , getTopPosts} = require('../controllers/blogPostController');
+const {createPost , updatePost , deletePost , getAllPosts , getPostBySlug , getPostsByTag , searchPosts , incrementPostView , likePost , getTopPosts} = require('../controllers/blogPostController');
 
 const {protect} = require('../middlewares/authMiddlewares');
 
@@ -22,7 +22,7 @@ router.put('/:id' , protect , adminOnly , updatePost);
 router.delete('/:id' , protect , adminOnly , deletePost);
 router.get('/tag/:tag',getPostsByTag);
 router.get('/search',searchPosts);
-router.post('/:id/view',incrementReview);
+router.post('/:id/view',incrementPostView);
 router.post('/:id/like',protect,likePost);
 router.get('/trending' , getTopPosts);
 

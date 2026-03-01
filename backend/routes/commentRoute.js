@@ -3,9 +3,9 @@ const {addComment , getCommentsByPost,deleteComment,getAllComments} = require('.
 const router=express.Router();
 const {protect} = require('../middlewares/authMiddlewares');
 
+router.get('/'  , getAllComments);
 router.post('/:postId' , protect , addComment);
 router.get('/:postId'  , getCommentsByPost);
-router.get('/'  , getAllComments);
 router.delete('/:commentId' , protect , deleteComment);
 
 

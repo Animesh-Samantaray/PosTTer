@@ -85,6 +85,12 @@ const deleteComment=async(req ,res)=>{
         if(!comment){
             return res.status(404).json({message:'Comment not found'});
         }
+        
+        // Check if user is the author of the comment
+        if(comment.author.toString() !== req.user._id.toString()){
+            return res.status(403).json({message:'Not authorized to delete this comment'});
+        }
+        
         await Comment.findByIdAndDelete(commentId);
         await Comment.deleteMany({
             parentComment:commentId
@@ -99,48 +105,54 @@ const deleteComment=async(req ,res)=>{
 }
 
 
-// Get all comments
-// get /api/comments/
-// public aaccess
-const getAllComments=async(req ,res)=>{
+// Get all comments across all posts
+// GET /api/comments/
+// Access: Public
+const getAllComments = async (req, res) => {
     try {
+        // 1. Fetch all comments and populate related data
         const comments = await Comment.find()
-        .populate('author' , 'name profileImageUrl')
-        .populate('post' , 'title coverImageUrl')
-        .sort({createdAt:1});
+            .populate('author', 'name profileImageUrl')
+            .populate('post', 'title coverImageUrl')
+            .sort({ createdAt: 1 }); // Sort chronologically
 
-        const commentMap={};
+        const commentMap = {};
 
-        comments.forEach(comment=>{
-            comment=comment.toObject();
-            comment.replies=[];
-            commentMap[comment._id]=comment;
-        })
+        // 2. Create a map of all comments for quick lookup
+        comments.forEach(comment => {
+            comment = comment.toObject();
+            comment.replies = []; // Initialize empty replies array for each
+            commentMap[comment._id] = comment;
+        });
 
+        const nestedComments = [];
 
-        const nestedComments=[];
-        comments.forEach(comment=>{
-            const mapped =commentMap[comment._id];
-            if(comment.parentComment){
+        // 3. Reconstruct the hierarchy
+        comments.forEach(comment => {
+            const mapped = commentMap[comment._id];
+            
+            if (comment.parentComment) {
+                // If it's a reply, find its parent in the map
                 const parent = commentMap[comment.parentComment];
-                if(parent){
-                    parent.replies.push(mapped);
-                }else{
-                    nestedComments.push(mapped);
+                if (parent) {
+                    parent.replies.push(mapped); // Add as a reply to the parent
+                } else {
+                    nestedComments.push(mapped); // Orphaned reply treated as top-level
                 }
-            }else{
-                    nestedComments.push(mapped);
+            } else {
+                // Top-level comment
+                nestedComments.push(mapped);
             }
-        })
+        });
 
         res.json(nestedComments);
     } catch (error) {
-         res.status(500).json({
-            message:error.message,
-            error:error.message
-        })
+        res.status(500).json({
+            message: error.message,
+            error: error.message
+        });
     }
-}
+};
 
 
 

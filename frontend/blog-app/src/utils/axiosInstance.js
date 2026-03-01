@@ -37,7 +37,9 @@ axiosInstance.interceptors.response.use(
 
   (error) => {
     if (!error.response) {
-      toast.error("Network error — server unreachable");
+      if (!error.config?.skipToast) {
+        toast.error("Network error — server unreachable");
+      }
       return Promise.reject(error);
     }
 
@@ -49,7 +51,9 @@ axiosInstance.interceptors.response.use(
     // 🔐 Unauthorized → token invalid / expired
     if (status === 401) {
       localStorage.removeItem("token");
-      toast.error("Session expired — login again");
+      if (!error.config?.skipToast) {
+        toast.error("Session expired — login again");
+      }
 
       // hard redirect — safest
       window.location.href = "/";
@@ -57,17 +61,23 @@ axiosInstance.interceptors.response.use(
 
     // 🚫 Validation / bad request
     else if (status === 400) {
-      toast.error(message);
+      if (!error.config?.skipToast) {
+        toast.error(message);
+      }
     }
 
     // 🔥 Server error
     else if (status >= 500) {
-      toast.error("Server exploded — try again later");
+      if (!error.config?.skipToast) {
+        toast.error("Server exploded — try again later");
+      }
     }
 
     // fallback
     else {
-      toast.error(message);
+      if (!error.config?.skipToast) {
+        toast.error(message);
+      }
     }
 
     return Promise.reject(error);

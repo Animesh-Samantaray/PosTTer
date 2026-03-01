@@ -17,7 +17,18 @@ const App = () => {
     <UserProvider>
     <div>
       <Router>
-        <Toaster position="top-right" />
+        <Toaster 
+          position="top-right"
+          toastOptions={
+            {
+              className:"",
+              style:{
+                fontSize:'13px'
+              }
+            }
+          }
+          containerId="default"
+        />
         <Routes>
           
            <Route path='/' element={<BlogLandingPage/>}/>
@@ -39,18 +50,6 @@ const App = () => {
           
         </Routes>
       </Router>
-      <Toaster 
-      toastOptions={
-        {
-          className:"",
-          style:{
-            fontSize:'13px'
-          }
-        }
-      }
-      
-      
-      />
     </div>
     </UserProvider>
   )
